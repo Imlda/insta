@@ -1,8 +1,8 @@
+from flask_login import UserMixin
 from app import db
 from datetime import datetime
 
-
-class User(db.Model):
+class User(db.Model, UserMixin):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(128), nullable=False)
@@ -13,31 +13,35 @@ class User(db.Model):
     join_date = db.Column(db.DateTime, default=datetime.utcnow)
     user_status = db.Column(db.Boolean, default=True)
     email = db.Column(db.String(128), nullable=False, unique=True)
-    # followers = db.relationship("Follower", backref="user")
-    # followings = db.relationship("Following", backref="user")
-    # posts = db.relationship("Post", backref="user")
-    # comments = db.relationship("Comment", backref="user")
-    # likes = db.relationship("Like", backref="user")
+    following_id = db.Column(db.Integer, ForeignKey('users.id'))
+    follower_id = db.Column(db.Integer, ForeignKey('users.id'))
+    following = db.relationship("Relation", foreign_keys="Relation.following_id", backref="following", lazy=True)
+    follower = db.relationship("Relation", foreign_keys="Relation.follower_id", backref="follower", lazy=True)
+    posts = db.relationship("Post", backref="posts_user", lazy=True)
+    comments = db.relationship("Comment", backref="comments_user", lazy=True)
+    likes = db.relationship("Like", backref="likes_user", lazy=True)
 
-    def __repr__(self):
-        return f"user: {self.username}"
+    # def __repr__(self):
+    #     return f"user: {self.username}"
 
-class Relationship(db.Models):
+class Relationship(db.Model):
     __tablename__ = "relationships"
     id = db.Column(db.Integer, primary_key=True)
-    status = db.Column(db.Boolean, deafult=True)
+    status = db.Column(db.Boolean, default=True)
     following_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     follower_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    relation_date = db.Column(db.DateTime, default="default.jpg")
+    relation_date = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Post(db.Model):
     __tablename__ = "posts"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    caption = db.Column(db.String(256), nullable=False)
+    caption = db.Column(db.String(256), default="")
     image = db.Column(db.String(256), nullable=False)
-    post_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    post_date = db.Column(db.DateTime, efault=datetime.utcnow)
     status = db.Column(db.Boolean, default=True)
+    comments = db.relationship("Comment", backref="commented", lazy=True)
+    likes = db.relationship("Like", backref="liked", lazy=True)
 
 class Comment(db.Model):
     __tablename__ = "comments"
